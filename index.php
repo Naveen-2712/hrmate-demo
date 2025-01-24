@@ -1,3 +1,53 @@
+<?php
+session_start();
+include 'db.php';
+include 'functions.php';
+
+$error = '';
+
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+
+    // Admin credentials
+    if ($email === 'Admin' && $password === 'Admin') {
+        $_SESSION['is_admin'] = true;
+        header("Location: admin.php");
+        exit();
+    }
+
+    // User login
+    $stmt = $conn->prepare("SELECT id, password, is_approved FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $storedPassword = $row['password'];
+        $isApproved = $row['is_approved'];
+
+        // Decrypt and verify password
+        if (decryptPassword($storedPassword) === $password) {
+            if ($isApproved) {
+                $_SESSION['user_id'] = $row['id'];
+                setcookie('logged_in', true, time() + (86400 * 30), "/"); // 30-day cookie
+                header("Location: business_setup.php");
+                exit();
+            } else {
+                $error = "Your account is pending approval. Please wait for admin approval.";
+            }
+        } else {
+            $error = "Invalid email or password.";
+        }
+    } else {
+        $error = "User not found. Please register first.";
+    }
+	
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -12,9 +62,9 @@
 	<link rel="preconnect" href="https://fonts.gstatic.com">
 	<link rel="shortcut icon" href="img/icons/icon-48x48.png" />
 
-	<link rel="canonical" href="https://demo-basic.adminkit.io/pages-sign-up.html" />
+	<link rel="canonical" href="https://demo-basic.adminkit.io/pages-sign-in.html" />
 
-	<title>Sign Up | Hr-Mate</title>
+	<title>Sign In</title>
 
 	<link href="css/app.css" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -28,34 +78,34 @@
 					<div class="d-table-cell align-middle">
 
 						<div class="text-center mt-4">
-							<h1 class="h2">Automate your Business</h1>
+							<h1 class="h2">Welcome back!</h1>
 							<p class="lead">
-								Start creating the best possible user experience for your Employees!
+								Sign in to your account to continue
 							</p>
 						</div>
 
 						<div class="card">
 							<div class="card-body">
 								<div class="m-sm-3">
-									<form>
-										<div class="mb-3">
-											<label class="form-label">Full name</label>
-											<input class="form-control form-control-lg" type="text" name="name" placeholder="Enter your name" />
-										</div>
-									
-										<div class="mb-3">
-											<label class="form-label">Password</label>
-											<input class="form-control form-control-lg" type="password" name="password" placeholder="Enter password" />
-										</div>
-										<div class="d-grid gap-2 mt-3">
-											<a href="index.html" class="btn btn-lg btn-primary">Sign up</a>
-										</div>
-									</form>
+								<?php if ($error): ?>
+                            	<div class="alert alert-danger"><?= $error ?></div>
+                				<?php endif; ?>
+                        		<form method="POST">
+                            		<div class="mb-3">
+                                		<label for="email" class="form-label"><i class="bi bi-envelope"></i> Email/Username</label>
+                                		<input type="text" name="email" id="email" class="form-control" required>
+                            		</div>
+                            		<div class="mb-3">
+                                		<label for="password" class="form-label"><i class="bi bi-lock"></i> Password</label>
+                                	<input type="password" name="password" id="password" class="form-control" required>
+                            	</div>
+                            	<button type="submit" class="btn btn-primary w-100"><i class="bi bi-box-arrow-in-right"></i> Login</button>
+                        		</form>
 								</div>
 							</div>
 						</div>
 						<div class="text-center mb-3">
-							Already have account? <a href="sign-in.html">Log In</a>
+							Don't have an account? <a href="sign-up.php">Sign up</a>
 						</div>
 					</div>
 				</div>
