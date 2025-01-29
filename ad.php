@@ -3,7 +3,9 @@ session_start();
 include 'db.php';
 
 // Fetch all users from the database
-$query = "SELECT * FROM users";
+$query = "SELECT users.email, users.name, users.phone_number, users.date_of_birth, jobs.role, jobs.department, jobs.date_of_joining, users.status 
+          FROM users 
+          JOIN jobs ON users.email = jobs.email"; // Assuming there's a foreign key relationship
 $result = mysqli_query($conn, $query);
 ?>
 
@@ -29,66 +31,57 @@ $result = mysqli_query($conn, $query);
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 	<style>
-		.card {
-			transition: transform 0.3s ease, box-shadow 0.3s ease;
-		}
+.switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
 
-		.card:hover {
-			transform: translateY(-10px);
-			box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-		}
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
 
-		.card:hover i {
-			transform: scale(1.2);
-			transition: transform 0.3s ease;
-		}
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: red;
+            transition: .4s;
+            border-radius: 34px;
+        }
 
-		.switch {
-    position: relative;
-    display: inline-block;
-    width: 34px;
-    height: 20px;
-}
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
 
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
 
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 34px;
-}
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
 
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 12px;
-    width: 12px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    border-radius: 50%;
-    transition: .4s;
-}
-
-input:checked + .slider {
-    background-color: #2196F3;
-}
-
-input:checked + .slider:before {
-    transform: translateX(14px);
-}
-
-/* Cards Animation */
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        /* Cards Animation */
 .card-animation {
     animation: slideInUp 1s ease-out;
 }
@@ -115,9 +108,30 @@ input:checked + .slider:before {
         opacity: 1;
         transform: translateY(0);
     }
-
-	
 }
+.table {
+	    width: 100px; /* Keep max width for the table */
+	    margin: auto; /* Center the table */
+	}
+
+	.table td {
+	    padding: 18px; /* Reduce row height */
+	    min-width: 50px; /* Set minimum column width for flexibility */
+	}
+
+	.table td:nth-child(5) { /* Target the Date Of Birth column */
+	    min-width: 250px; /* Increase minimum width for Date Of Birth */
+	}
+
+	.table thead th {
+	    background-color:#222E3C; /* Change header color to blue */
+	    color: white; /* Change text color to white for contrast */
+	}
+
+	.btn {
+	    padding: 5px 10px; /* Decrease button size */
+	    font-size: 12px; /* Decrease font size */
+	}
 
 	</style>
 </head>
@@ -136,34 +150,10 @@ input:checked + .slider:before {
 					</li>
 
 					<li class="sidebar-item">
-        <a class="sidebar-link" href="#" data-bs-toggle="collapse" data-bs-target="#companyDetails" aria-expanded="false">
-            <i class="align-middle" data-feather="building"></i> <span class="align-middle">Add Company</span>
-        </a>
-        <div id="companyDetails" class="collapse">
-            <ul class="sidebar-nav">
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="add-company.php">
-                        <span class="align-middle">Company Details</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="company-policies.html">
-                        <span class="align-middle">Company Policies</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="company-structure.html">
-                        <span class="align-middle">Company Structure</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="company-financials.html">
-                        <span class="align-middle">Company Financials</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </li>
+						<a class="sidebar-link" href="company-details.html">
+              <i class="align-middle" data-feather="building"></i> <span class="align-middle">Company Details</span>
+            </a>
+					</li>
 
 					<li class="sidebar-item">
 						<a class="sidebar-link" href="add-user.html">
@@ -218,52 +208,50 @@ input:checked + .slider:before {
 			</nav>
 
 			<main class="content">
-    <div class="container-fluid p-0">
+            <div class="container-fluid p-0">
         <h1 class="h3 mb-3">List of User's</h1>
         <div class="row">
             <div class="col-12">
                 <div class="card table-animation"> <!-- Add table-animation class here -->
                     <div class="card-body">
-					<table class="table table-striped table-hover">
+                    <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Email</th>
                                         <th>Name</th>
+                                        <th>Email</th>
                                         <th>Phone Number</th>
-                                        <th>Emergency Number</th>
                                         <th>Date of Birth</th>
-                                        <th>Blood Group</th>
-                                        <th>Marital Status</th>
-                                        <th>Address Line 1</th>
-                                        <th>Address Line 2</th>
-                                        <th>Postal Code</th>
-                                        <th>City</th>
-                                        <th>Country</th>
+                                        <th>Roles</th>
+                                        <th>Department</th>
+                                        <th>Date of Joining</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php while($row = mysqli_fetch_assoc($result)): ?>
                                     <tr>
-                                        <td><?php echo htmlspecialchars($row['email']); ?></td>
                                         <td><?php echo htmlspecialchars($row['name']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['email']); ?></td>
                                         <td><?php echo htmlspecialchars($row['phone_number']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['emergency_number']); ?></td>
                                         <td><?php echo htmlspecialchars($row['date_of_birth']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['blood_group']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['marital_status']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['address_line1']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['address_line2']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['postal_code']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['city']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['country']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['role']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['department']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['date_of_joining']); ?></td>
                                         <td>
-                                            <label class="switch">
-                                                <input type="checkbox" 
-                                                       onchange="updateStatus(this, '<?php echo $row['email']; ?>')"
-                                                       data-email="<?php echo $row['email']; ?>">
-                                                <span class="slider"></span>
-                                            </label>
+                                            <div class="status-container">
+                                                <label class="switch">
+                                                    <input type="checkbox" 
+                                                           onchange="updateStatus(this, '<?php echo $row['email']; ?>')"
+                                                           <?php echo ($row['status'] == 'Accepted') ? 'checked' : ''; ?>>
+                                                    <span class="slider"></span>
+                                                </label>
+                                                <span class="status-text">
+                                                    <?php 
+                                                    $status = $row['status'] ?? 'Pending';
+                                                    echo $status; 
+                                                    ?>
+                                                </span>
+                                            </div>
                                         </td>
                                     </tr>
                                     <?php endwhile; ?>
@@ -320,13 +308,11 @@ input:checked + .slider:before {
 </main>
 		</div>
 	</div>
-	
-    <!-- Add this script for AJAX status update -->
     <script>
     function updateStatus(checkbox, email) {
         const status = checkbox.checked ? 'Accepted' : 'Pending';
+        const statusText = checkbox.closest('.status-container').querySelector('.status-text');
         
-        // AJAX call to update status
         fetch('update_status.php', {
             method: 'POST',
             headers: {
@@ -337,6 +323,8 @@ input:checked + .slider:before {
         .then(response => response.json())
         .then(data => {
             if(data.success) {
+                // Update the status text dynamically
+                statusText.textContent = status;
                 console.log('Status updated successfully');
             } else {
                 console.error('Failed to update status');
@@ -351,6 +339,9 @@ input:checked + .slider:before {
         });
     }
     </script>
+
+    <!-- Bootstrap JS (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 	<script src="js/app.js"></script>
 

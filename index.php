@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 
     // Admin credentials
-    if ($email === 'Admin' && $password === 'Admin') {
+    if ($email === 'admin' && $password === 'admin') {
         $_SESSION['is_admin'] = true;
         header("Location: admin.php");
         exit();
